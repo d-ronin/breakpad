@@ -71,6 +71,7 @@ using google_breakpad::scoped_ptr;
 bool PrintMinidumpProcess(const string &minidump_file,
                           const std::vector<string> &symbol_paths,
                           bool machine_readable,
+                          bool output_register_contents,
                           bool output_stack_contents) {
   scoped_ptr<SimpleSymbolSupplier> symbol_supplier;
   if (!symbol_paths.empty()) {
@@ -95,7 +96,7 @@ bool PrintMinidumpProcess(const string &minidump_file,
   }
 
   if (machine_readable) {
-    PrintProcessStateMachineReadable(process_state);
+    PrintProcessStateMachineReadable(process_state, output_register_contents);
   } else {
     PrintProcessState(process_state, output_stack_contents, &resolver);
   }
@@ -106,6 +107,7 @@ bool PrintMinidumpProcess(const string &minidump_file,
 void usage(const char *program_name) {
   fprintf(stderr, "usage: %s [-m|-s] <minidump-file> [symbol-path ...]\n"
           "    -m : Output in machine-readable format\n"
+          "        -r : Output register contents in machine-readable format\n"
           "    -s : Output stack contents\n",
           program_name);
 }
@@ -123,6 +125,7 @@ int main(int argc, char **argv) {
   const char *minidump_file;
   bool machine_readable = false;
   bool output_stack_contents = false;
+  bool output_register_contents = false;
   int symbol_path_arg;
 
   if (strcmp(argv[1], "-m") == 0) {
@@ -132,8 +135,20 @@ int main(int argc, char **argv) {
     }
 
     machine_readable = true;
-    minidump_file = argv[2];
-    symbol_path_arg = 3;
+
+    if (strcmp(argv[2], "-r") == 0) {
+      if (argc < 4) {
+        usage(argv[0]);
+        return 1;
+      }
+
+      output_register_contents = true;
+      minidump_file = argv[3];
+      symbol_path_arg = 4;
+    } else {
+      minidump_file = argv[2];
+      symbol_path_arg = 3;
+    }
   } else if (strcmp(argv[1], "-s") == 0) {
     if (argc < 3) {
       usage(argv[0]);
@@ -158,5 +173,6 @@ int main(int argc, char **argv) {
   return PrintMinidumpProcess(minidump_file,
                               symbol_paths,
                               machine_readable,
+                              output_register_contents,
                               output_stack_contents) ? 0 : 1;
 }

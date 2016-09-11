@@ -92,7 +92,7 @@ int PrintMicrodumpProcess(const char* microdump_file,
 
   if (res == google_breakpad::PROCESS_OK) {
     if (machine_readable) {
-      PrintProcessStateMachineReadable(process_state);
+      PrintProcessStateMachineReadable(process_state, false);
     } else {
       PrintProcessState(process_state, false, &resolver);
     }

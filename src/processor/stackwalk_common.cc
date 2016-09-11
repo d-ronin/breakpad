@@ -60,6 +60,7 @@ using std::vector;
 
 // Separator character for machine readable output.
 static const char kOutputSeparator = '|';
+static const char kPropertySeparator = ':';
 
 // PrintRegister prints a register's name and value to stdout.  It will
 // print four registers on a line.  For the first register in a set,
@@ -94,6 +95,18 @@ static int PrintRegister64(const char *name, uint64_t value, int start_col) {
   fputs(buffer, stdout);
 
   return start_col + strlen(buffer);
+}
+
+// PrintRegisterMachineReadable prints a register's name and value to stdout
+// in machine readable format.
+// Format is |regname:value
+static void PrintRegisterMachineReadable(const char *name, uint32_t value) {
+  printf("%c%s%c%" PRId32, kOutputSeparator, name, kPropertySeparator, value);
+}
+
+// PrintRegisterMachineReadable64 does the same thing, but for 64-bit registers.
+static void PrintRegisterMachineReadable64(const char *name, uint64_t value) {
+  printf("%c%s%c%" PRId64, kOutputSeparator, name, kPropertySeparator, value);
 }
 
 // StripSeparator takes a string |original| and returns a copy
@@ -621,7 +634,8 @@ static void PrintStack(const CallStack *stack,
 // Module, function, source file, and source line may all be empty
 // depending on availability.  The code offset follows the same rules as
 // PrintStack above.
-static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
+static void PrintStackMachineReadable(int thread_num, const CallStack *stack,
+                                      const string &cpu, bool print_register_contents) {
   int frame_count = stack->frames()->size();
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
     const StackFrame *frame = stack->frames()->at(frame_index);
@@ -669,6 +683,281 @@ static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
              kOutputSeparator,
              instruction_address);
     }
+
+    // print register contents
+    if (print_register_contents) {
+       if (cpu == "x86") {
+        const StackFrameX86 *frame_x86 =
+          reinterpret_cast<const StackFrameX86*>(frame);
+
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EIP)
+          PrintRegisterMachineReadable("eip", frame_x86->context.eip);
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_ESP)
+          PrintRegisterMachineReadable("esp", frame_x86->context.esp);
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EBP)
+          PrintRegisterMachineReadable("ebp", frame_x86->context.ebp);
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EBX)
+          PrintRegisterMachineReadable("ebx", frame_x86->context.ebx);
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_ESI)
+          PrintRegisterMachineReadable("esi", frame_x86->context.esi);
+        if (frame_x86->context_validity & StackFrameX86::CONTEXT_VALID_EDI)
+          PrintRegisterMachineReadable("edi", frame_x86->context.edi);
+        if (frame_x86->context_validity == StackFrameX86::CONTEXT_VALID_ALL) {
+          PrintRegisterMachineReadable("eax", frame_x86->context.eax);
+          PrintRegisterMachineReadable("ecx", frame_x86->context.ecx);
+          PrintRegisterMachineReadable("edx", frame_x86->context.edx);
+          PrintRegisterMachineReadable("efl", frame_x86->context.eflags);
+        }
+      } else if (cpu == "ppc") {
+        const StackFramePPC *frame_ppc =
+          reinterpret_cast<const StackFramePPC*>(frame);
+
+        if (frame_ppc->context_validity & StackFramePPC::CONTEXT_VALID_SRR0)
+          PrintRegisterMachineReadable("srr0", frame_ppc->context.srr0);
+        if (frame_ppc->context_validity & StackFramePPC::CONTEXT_VALID_GPR1)
+          PrintRegisterMachineReadable("r1", frame_ppc->context.gpr[1]);
+      } else if (cpu == "amd64") {
+        const StackFrameAMD64 *frame_amd64 =
+          reinterpret_cast<const StackFrameAMD64*>(frame);
+
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RAX)
+          PrintRegisterMachineReadable64("rax", frame_amd64->context.rax);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RDX)
+          PrintRegisterMachineReadable64("rdx", frame_amd64->context.rdx);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RCX)
+          PrintRegisterMachineReadable64("rcx", frame_amd64->context.rcx);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RBX)
+          PrintRegisterMachineReadable64("rbx", frame_amd64->context.rbx);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RSI)
+          PrintRegisterMachineReadable64("rsi", frame_amd64->context.rsi);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RDI)
+          PrintRegisterMachineReadable64("rdi", frame_amd64->context.rdi);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RBP)
+          PrintRegisterMachineReadable64("rbp", frame_amd64->context.rbp);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RSP)
+          PrintRegisterMachineReadable64("rsp", frame_amd64->context.rsp);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R8)
+          PrintRegisterMachineReadable64("r8", frame_amd64->context.r8);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R9)
+          PrintRegisterMachineReadable64("r9", frame_amd64->context.r9);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R10)
+          PrintRegisterMachineReadable64("r10", frame_amd64->context.r10);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R11)
+          PrintRegisterMachineReadable64("r11", frame_amd64->context.r11);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R12)
+          PrintRegisterMachineReadable64("r12", frame_amd64->context.r12);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R13)
+          PrintRegisterMachineReadable64("r13", frame_amd64->context.r13);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R14)
+          PrintRegisterMachineReadable64("r14", frame_amd64->context.r14);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_R15)
+          PrintRegisterMachineReadable64("r15", frame_amd64->context.r15);
+        if (frame_amd64->context_validity & StackFrameAMD64::CONTEXT_VALID_RIP)
+          PrintRegisterMachineReadable64("rip", frame_amd64->context.rip);
+      } else if (cpu == "sparc") {
+        const StackFrameSPARC *frame_sparc =
+          reinterpret_cast<const StackFrameSPARC*>(frame);
+
+        if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_SP)
+          PrintRegisterMachineReadable("sp", frame_sparc->context.g_r[14]);
+        if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_FP)
+          PrintRegisterMachineReadable("fp", frame_sparc->context.g_r[30]);
+        if (frame_sparc->context_validity & StackFrameSPARC::CONTEXT_VALID_PC)
+          PrintRegisterMachineReadable("pc", frame_sparc->context.pc);
+      } else if (cpu == "arm") {
+        const StackFrameARM *frame_arm =
+          reinterpret_cast<const StackFrameARM*>(frame);
+
+        // Argument registers (caller-saves), which will likely only be valid
+        // for the youngest frame.
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R0)
+          PrintRegisterMachineReadable("r0", frame_arm->context.iregs[0]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R1)
+          PrintRegisterMachineReadable("r1", frame_arm->context.iregs[1]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R2)
+          PrintRegisterMachineReadable("r2", frame_arm->context.iregs[2]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R3)
+          PrintRegisterMachineReadable("r3", frame_arm->context.iregs[3]);
+
+        // General-purpose callee-saves registers.
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R4)
+          PrintRegisterMachineReadable("r4", frame_arm->context.iregs[4]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R5)
+          PrintRegisterMachineReadable("r5", frame_arm->context.iregs[5]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R6)
+          PrintRegisterMachineReadable("r6", frame_arm->context.iregs[6]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R7)
+          PrintRegisterMachineReadable("r7", frame_arm->context.iregs[7]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R8)
+          PrintRegisterMachineReadable("r8", frame_arm->context.iregs[8]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R9)
+          PrintRegisterMachineReadable("r9", frame_arm->context.iregs[9]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R10)
+          PrintRegisterMachineReadable("r10", frame_arm->context.iregs[10]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_R12)
+          PrintRegisterMachineReadable("r12", frame_arm->context.iregs[12]);
+
+        // Registers with a dedicated or conventional purpose.
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_FP)
+          PrintRegisterMachineReadable("fp", frame_arm->context.iregs[11]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_SP)
+          PrintRegisterMachineReadable("sp", frame_arm->context.iregs[13]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_LR)
+          PrintRegisterMachineReadable("lr", frame_arm->context.iregs[14]);
+        if (frame_arm->context_validity & StackFrameARM::CONTEXT_VALID_PC)
+          PrintRegisterMachineReadable("pc", frame_arm->context.iregs[15]);
+      } else if (cpu == "arm64") {
+        const StackFrameARM64 *frame_arm64 =
+          reinterpret_cast<const StackFrameARM64*>(frame);
+
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X0) {
+          PrintRegisterMachineReadable64("x0", frame_arm64->context.iregs[0]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X1) {
+          PrintRegisterMachineReadable64("x1", frame_arm64->context.iregs[1]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X2) {
+          PrintRegisterMachineReadable64("x2", frame_arm64->context.iregs[2]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X3) {
+          PrintRegisterMachineReadable64("x3", frame_arm64->context.iregs[3]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X4) {
+          PrintRegisterMachineReadable64("x4", frame_arm64->context.iregs[4]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X5) {
+          PrintRegisterMachineReadable64("x5", frame_arm64->context.iregs[5]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X6) {
+          PrintRegisterMachineReadable64("x6", frame_arm64->context.iregs[6]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X7) {
+          PrintRegisterMachineReadable64("x7", frame_arm64->context.iregs[7]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X8) {
+          PrintRegisterMachineReadable64("x8", frame_arm64->context.iregs[8]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X9) {
+          PrintRegisterMachineReadable64("x9", frame_arm64->context.iregs[9]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X10) {
+          PrintRegisterMachineReadable64("x10", frame_arm64->context.iregs[10]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X11) {
+          PrintRegisterMachineReadable64("x11", frame_arm64->context.iregs[11]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X12) {
+          PrintRegisterMachineReadable64("x12", frame_arm64->context.iregs[12]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X13) {
+          PrintRegisterMachineReadable64("x13", frame_arm64->context.iregs[13]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X14) {
+          PrintRegisterMachineReadable64("x14", frame_arm64->context.iregs[14]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X15) {
+          PrintRegisterMachineReadable64("x15", frame_arm64->context.iregs[15]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X16) {
+          PrintRegisterMachineReadable64("x16", frame_arm64->context.iregs[16]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X17) {
+          PrintRegisterMachineReadable64("x17", frame_arm64->context.iregs[17]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X18) {
+          PrintRegisterMachineReadable64("x18", frame_arm64->context.iregs[18]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X19) {
+          PrintRegisterMachineReadable64("x19", frame_arm64->context.iregs[19]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X20) {
+          PrintRegisterMachineReadable64("x20", frame_arm64->context.iregs[20]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X21) {
+          PrintRegisterMachineReadable64("x21", frame_arm64->context.iregs[21]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X22) {
+          PrintRegisterMachineReadable64("x22", frame_arm64->context.iregs[22]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X23) {
+          PrintRegisterMachineReadable64("x23", frame_arm64->context.iregs[23]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X24) {
+          PrintRegisterMachineReadable64("x24", frame_arm64->context.iregs[24]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X25) {
+          PrintRegisterMachineReadable64("x25", frame_arm64->context.iregs[25]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X26) {
+          PrintRegisterMachineReadable64("x26", frame_arm64->context.iregs[26]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X27) {
+          PrintRegisterMachineReadable64("x27", frame_arm64->context.iregs[27]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_X28) {
+          PrintRegisterMachineReadable64("x28", frame_arm64->context.iregs[28]);
+        }
+
+        // Registers with a dedicated or conventional purpose.
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_FP) {
+          PrintRegisterMachineReadable64("fp", frame_arm64->context.iregs[29]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_LR) {
+          PrintRegisterMachineReadable64("lr", frame_arm64->context.iregs[30]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_SP) {
+          PrintRegisterMachineReadable64("sp", frame_arm64->context.iregs[31]);
+        }
+        if (frame_arm64->context_validity & StackFrameARM64::CONTEXT_VALID_PC) {
+          PrintRegisterMachineReadable64("pc", frame_arm64->context.iregs[32]);
+        }
+      } else if ((cpu == "mips") || (cpu == "mips64")) {
+        const StackFrameMIPS* frame_mips =
+          reinterpret_cast<const StackFrameMIPS*>(frame);
+
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_GP)
+          PrintRegisterMachineReadable64("gp",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_GP]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_SP)
+          PrintRegisterMachineReadable64("sp",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_SP]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_FP)
+          PrintRegisterMachineReadable64("fp",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_FP]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_RA)
+          PrintRegisterMachineReadable64("ra",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_RA]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_PC)
+          PrintRegisterMachineReadable64("pc", frame_mips->context.epc);
+
+        // Save registers s0-s7
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S0)
+          PrintRegisterMachineReadable64("s0",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S0]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S1)
+          PrintRegisterMachineReadable64("s1",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S1]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S2)
+          PrintRegisterMachineReadable64("s2",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S2]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S3)
+          PrintRegisterMachineReadable64("s3",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S3]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S4)
+          PrintRegisterMachineReadable64("s4",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S4]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S5)
+          PrintRegisterMachineReadable64("s5",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S5]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S6)
+          PrintRegisterMachineReadable64("s6",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S6]);
+        if (frame_mips->context_validity & StackFrameMIPS::CONTEXT_VALID_S7)
+          PrintRegisterMachineReadable64("s7",
+                       frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S7]);
+      }
+    }
+
     printf("\n");
   }
 }
@@ -875,7 +1164,8 @@ void PrintProcessState(const ProcessState& process_state,
                process_state.modules_with_corrupt_symbols());
 }
 
-void PrintProcessStateMachineReadable(const ProcessState& process_state) {
+void PrintProcessStateMachineReadable(const ProcessState& process_state,
+                                      bool print_register_contents) {
   // Print OS and CPU information.
   // OS|{OS Name}|{OS Version}
   // CPU|{CPU Name}|{CPU Info}|{Number of CPUs}
@@ -933,7 +1223,9 @@ void PrintProcessStateMachineReadable(const ProcessState& process_state) {
   // If the thread that requested the dump is known, print it first.
   if (requesting_thread != -1) {
     PrintStackMachineReadable(requesting_thread,
-                              process_state.threads()->at(requesting_thread));
+                              process_state.threads()->at(requesting_thread),
+                              process_state.system_info()->cpu,
+                              print_register_contents);
   }
 
   // Print all of the threads in the dump.
@@ -942,7 +1234,9 @@ void PrintProcessStateMachineReadable(const ProcessState& process_state) {
     if (thread_index != requesting_thread) {
       // Don't print the crash thread again, it was already printed.
       PrintStackMachineReadable(thread_index,
-                                process_state.threads()->at(thread_index));
+                                process_state.threads()->at(thread_index),
+                                process_state.system_info()->cpu,
+                                print_register_contents);
     }
   }
 }

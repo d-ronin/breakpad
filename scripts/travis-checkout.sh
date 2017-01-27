@@ -12,7 +12,7 @@ gclient_sync() {
   srcdir=$(basename "$TRAVIS_BUILD_DIR")
   cd "${TRAVIS_BUILD_DIR}"/..
   mv "${srcdir}" src
-  gclient config --unmanaged https://github.com/google/breakpad.git
+  gclient config --unmanaged https://github.com/${TRAVIS_REPO_SLUG}.git
   gclient sync
 }
 

@@ -1,42 +1,30 @@
-version: '{build}'
+image: Visual Studio 2015
+shallow_clone: true
+clone_depth: 1
 
-environment:
-  GYP_MSVS_VERSION: 2013
-
-platform:
-  - Win32
-
-configuration:
-  - Debug
-  - Release
-
-# Use the source dir expected by gclient.
-clone_folder: c:\projects\breakpad\src
-
-# Before checkout.
-init:
-  - cd %APPVEYOR_BUILD_FOLDER%\..\..
-  - appveyor DownloadFile https://storage.googleapis.com/chrome-infra/depot_tools.zip
-  - 7z -bd x depot_tools.zip -odepot_tools
-  - depot_tools\update_depot_tools
-  - cd %APPVEYOR_BUILD_FOLDER%
-
-# After checkout.
 install:
-  - PATH C:\projects\depot_tools;%PATH%
-  - cd %APPVEYOR_BUILD_FOLDER%\..
-  - gclient config https://%APPVEYOR_REPO_PROVIDER%.com/%APPVEYOR_REPO_NAME% --unmanaged --name=src
-  - gclient sync
+  - cinst qbs
+  - qbs setup-toolchains --detect
 
 build_script:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - msbuild src\client\windows\breakpad_client.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /m /verbosity:normal
-  - msbuild src\tools\windows\tools_windows.sln    /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /m /verbosity:normal
+  - qbs install profile:MSVC2015-x86 release qbs.installRoot:dist
 
-test_script:
-  - src\client\windows\%CONFIGURATION%\client_tests.exe
-  - src\tools\windows\%CONFIGURATION%\dump_syms_unittest.exe
+after_build:
+  - ps: tree /F dist
 
 artifacts:
-  - path: '**\*.exe'
-  - path: '**\*.lib'
+  - path: dist
+    name: dr-breakpad-msvc2015-$(APPVEYOR_REPO_TAG_NAME)
+    type: zip
+
+deploy:
+  provider: GitHub
+  description: 'Automatic build'
+  auth_token:
+    secure: KLuY5bPgxI9oDFmmhNWEwpPWN/9cXEWtBHt6J5OQzCfA27FHravJLDFdSAfsbsJw
+  artifact: dr-breakpad-msvc2015-$(APPVEYOR_REPO_TAG_NAME).zip
+  draft: true
+  prerelease: false
+  force_update: true
+  on:
+    appveyor_repo_tag: true

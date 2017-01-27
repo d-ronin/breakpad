@@ -16,12 +16,6 @@ BreakpadProduct {
     }
 
     Group {
-        fileTagsFilter: product.type
-        qbs.install: true
-        qbs.installDir: "lib"
-    }
-
-    Group {
         files: "linux/crash_generation/*.h"
         condition: qbs.targetOS.contains("linux")
         qbs.install: true

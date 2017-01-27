@@ -5,7 +5,25 @@ Product {
     Depends { name: "cpp" }
 
     property bool consoleApplication: true
-    property bool installable: true
+    property stringList installVariants: ["debug", "release"]
+
+    property bool isLibrary: {
+        for (var i = 0; i < type.length; i++) {
+            if (type[i].indexOf("lib") != -1)
+                return true;
+        }
+        return false;
+    }
+
+    Properties {
+        condition: qbs.targetOS.contains("macos") && isLibrary && qbs.buildVariant !== "release"
+        targetName: name + "_" + qbs.buildVariant
+    }
+    Properties {
+        condition: qbs.targetOS.contains("windows") && isLibrary && qbs.buildVariant !== "release"
+        targetName: name + qbs.buildVariant[0]
+    }
+    targetName: name
 
     cpp.cxxLanguageVersion: "c++11"
     cpp.minimumMacosVersion: "10.9"
@@ -113,9 +131,9 @@ Product {
     }
 
     Group {
-        condition: installable
+        condition: installVariants.contains(qbs.buildVariant)
         fileTagsFilter: product.type
         qbs.install: true
-        qbs.installDir: product.type.contains("application") ? "bin" : "lib"
+        qbs.installDir: product.isLibrary ? "lib" : "bin"
     }
 }

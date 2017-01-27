@@ -3,7 +3,7 @@ import qbs
 BreakpadProduct {
     type: ["staticlibrary"]
     name: "common"
-    installable: false
+    installVariants: []
 
     files: commonSource
 

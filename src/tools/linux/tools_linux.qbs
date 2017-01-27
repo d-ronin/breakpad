@@ -47,12 +47,6 @@ Project {
         Depends { name: "common" }
 
         files: "md2core/minidump-2-core.cc"
-
-        Group {
-            fileTagsFilter: product.type
-            qbs.install: true
-            qbs.installDir: "bin"
-        }
     }
 
     BreakpadProduct {

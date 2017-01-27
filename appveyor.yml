@@ -5,9 +5,11 @@ clone_depth: 1
 install:
   - cinst qbs
   - qbs setup-toolchains --detect
+  - qbs config defaultProfile MSVC2015-x86
 
 build_script:
-  - qbs install profile:MSVC2015-x86 release qbs.installRoot:dist
+  - qbs install --install-root dist -p breakpad_client debug
+  - qbs install --install-root dist release
 
 after_build:
   - ps: tree /F dist

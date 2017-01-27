@@ -13,6 +13,7 @@ install: "./scripts/travis-install-${TRAVIS_OS_NAME}.sh"
 
 before_script:
 - qbs setup-toolchains --detect
+- qbs config defaultProfile ${QBS_PROFILE}
 
 matrix:
   include:
@@ -22,7 +23,8 @@ matrix:
     env: QBS_PROFILE=clang
 
 script:
-- qbs install profile:${QBS_PROFILE} release qbs.installRoot:./dist
+- qbs install --install-root dist -p breakpad_client debug
+- qbs install --install-root dist release
 - tree ./dist
 
 after_success:

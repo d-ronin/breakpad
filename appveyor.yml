@@ -23,7 +23,7 @@ deploy:
   provider: GitHub
   description: 'Automatic build'
   auth_token:
-    secure: KLuY5bPgxI9oDFmmhNWEwpPWN/9cXEWtBHt6J5OQzCfA27FHravJLDFdSAfsbsJw
+    secure: H2rTOfsuiqkTmu7tpwMClKRUHwQ61WoNIaC/7x95YLjTsxBMD70VHRaQnV9g7uGX
   artifact: dr-breakpad-msvc2015-$(APPVEYOR_REPO_TAG_NAME).zip
   draft: true
   prerelease: false

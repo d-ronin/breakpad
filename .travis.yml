@@ -4,10 +4,7 @@ sudo: required
 
 env:
   global:
-    # works around upstream/google depot-tools suck :(
-    - DEPLOY_ARCHIVE=${TRAVIS_BUILD_DIR}/../src/dist/dr-breakpad-${TRAVIS_OS_NAME}-${TRAVIS_TAG}.tar.xz
-
-before_install: ./scripts/travis-checkout.sh
+    - DEPLOY_ARCHIVE=${TRAVIS_BUILD_DIR}/dist/dr-breakpad-${TRAVIS_OS_NAME}-${TRAVIS_TAG}.tar.xz
 
 install: ./scripts/travis-install-${TRAVIS_OS_NAME}.sh
 

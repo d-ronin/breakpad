@@ -1,0 +1,15 @@
+[submodule "src/src/third_party/glog"]
+	path = src/src/third_party/glog
+	url = https://github.com/google/glog.git
+[submodule "src/third_party/protobuf/protobuf"]
+	path = src/third_party/protobuf/protobuf
+	url = https://github.com/google/protobuf.git
+[submodule "src/third_party/glog"]
+	path = src/third_party/glog
+	url = https://github.com/google/glog.git
+[submodule "src/testing"]
+	path = src/testing
+	url = https://github.com/google/googletest.git
+[submodule "src/third_party/lss"]
+	path = src/third_party/lss
+	url = https://chromium.googlesource.com/linux-syscall-support/

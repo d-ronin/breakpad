@@ -16,12 +16,12 @@ Product {
     }
 
     Properties {
-        condition: qbs.targetOS.contains("macos") && isLibrary && qbs.buildVariant !== "release"
-        targetName: name + "_" + qbs.buildVariant
-    }
-    Properties {
         condition: qbs.targetOS.contains("windows") && isLibrary && qbs.buildVariant !== "release"
         targetName: name + qbs.buildVariant[0]
+    }
+    Properties {
+        condition: isLibrary && qbs.buildVariant !== "release"
+        targetName: name + "_" + qbs.buildVariant
     }
     targetName: name
 

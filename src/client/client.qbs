@@ -8,8 +8,10 @@ BreakpadProduct {
 
     Properties {
         condition: !qbs.targetOS.contains("windows")
-        cpp.dynamicLibraries: 'pthread'
+        cpp.dynamicLibraries: ["pthread", "dl"]
     }
+
+    cpp.frameworks: qbs.targetOS.contains("macos") ? ["CoreFoundation"] : undefined
 
     Group {
         files: commonSource

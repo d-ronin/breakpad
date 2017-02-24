@@ -12,4 +12,4 @@
 	url = https://github.com/google/googletest.git
 [submodule "src/third_party/lss"]
 	path = src/third_party/lss
-	url = https://chromium.googlesource.com/linux-syscall-support/
+	url = https://github.com/d-ronin/breakpad-lss.git

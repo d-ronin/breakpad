@@ -7,6 +7,9 @@ install:
   - qbs setup-toolchains --detect
   - qbs config defaultProfile MSVC2015-x86
 
+before_build:
+  - ps: $env:PROJECT_REV = If ($env:APPVEYOR_REPO_TAG_NAME) {$env:APPVEYOR_REPO_TAG_NAME} Else {$env:APPVEYOR_REPO_COMMIT}
+
 build_script:
   - qbs install --install-root dist -p breakpad_client debug
   - qbs install --install-root dist release
@@ -16,7 +19,7 @@ after_build:
 
 artifacts:
   - path: dist
-    name: dr-breakpad-msvc2015-$(APPVEYOR_REPO_TAG_NAME)
+    name: dr-breakpad-msvc2015-$(PROJECT_REV)
     type: zip
 
 deploy:
@@ -24,7 +27,7 @@ deploy:
   description: 'Automatic build'
   auth_token:
     secure: H2rTOfsuiqkTmu7tpwMClKRUHwQ61WoNIaC/7x95YLjTsxBMD70VHRaQnV9g7uGX
-  artifact: dr-breakpad-msvc2015-$(APPVEYOR_REPO_TAG_NAME).zip
+  artifact: dr-breakpad-msvc2015-$(PROJECT_REV).zip
   draft: true
   prerelease: false
   force_update: true

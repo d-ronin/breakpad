@@ -64,6 +64,9 @@ Project {
         type: ["application"]
         name: "minidump_dump"
 
+        // upstream broke this on windows :( https://chromium-review.googlesource.com/c/breakpad/breakpad/+/457019
+        condition: !qbs.targetOS.contains("windows")
+
         files: commonFiles.concat([
             "minidump.cc",
             "minidump_dump.cc",

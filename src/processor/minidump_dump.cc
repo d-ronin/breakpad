@@ -52,6 +52,7 @@ using google_breakpad::MinidumpAssertion;
 using google_breakpad::MinidumpSystemInfo;
 using google_breakpad::MinidumpMiscInfo;
 using google_breakpad::MinidumpBreakpadInfo;
+using google_breakpad::MinidumpCrashpadInfo;
 
 struct Options {
   Options()
@@ -120,6 +121,9 @@ static bool PrintMinidumpDump(const Options& options) {
     thread_list->Print();
   }
 
+  // It's useful to be able to see the full list of modules here even if it
+  // would cause minidump_stackwalk to fail.
+  MinidumpModuleList::set_max_modules(UINT32_MAX);
   MinidumpModuleList *module_list = minidump.GetModuleList();
   if (!module_list) {
     ++errors;
@@ -180,6 +184,12 @@ static bool PrintMinidumpDump(const Options& options) {
     BPLOG(ERROR) << "minidump.GetMemoryInfoList() failed";
   } else {
     memory_info_list->Print();
+  }
+
+  MinidumpCrashpadInfo *crashpad_info = minidump.GetCrashpadInfo();
+  if (crashpad_info) {
+    // Crashpad info is optional, so don't treat absence as an error.
+    crashpad_info->Print();
   }
 
   DumpRawStream(&minidump,

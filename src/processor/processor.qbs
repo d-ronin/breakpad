@@ -27,6 +27,7 @@ Project {
         "stackwalker_sparc.cc",
         "stackwalker_x86.cc",
         "tokenize.cc",
+        "../common/path_helper.cc",
     ]
 
     property stringList commonIncludePaths: ['../']

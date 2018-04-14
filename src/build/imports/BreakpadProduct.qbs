@@ -59,6 +59,7 @@ Product {
             "simple_string_dictionary.cc",
             "string_conversion.cc",
             "test_assembler.cc",
+            "path_helper.cc",
         ];
         
         if (qbs.targetOS.contains("linux") || qbs.targetOS.contains("macos")) {

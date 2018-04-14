@@ -20,8 +20,8 @@ matrix:
     env: QBS_PROFILE=clang
 
 script:
-- qbs install --install-root dist -p breakpad_client debug
-- qbs install --install-root dist release
+- qbs install --install-root dist -p breakpad_client config:debug
+- qbs install --install-root dist config:release
 - tree ./dist
 
 after_success:
